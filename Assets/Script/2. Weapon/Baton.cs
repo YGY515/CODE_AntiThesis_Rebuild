@@ -14,69 +14,53 @@ public class Baton : MonoBehaviour, IWeapon
 
     public void Attack()
     {
-        Debug.Log("ÈÖµÎ¸£±â");
+        Debug.Log("íœ˜ë‘ë¥´ê¸°");
 
 
         if (playerAnimator == null)
         {
-            Debug.LogError("playerAnimator°¡ ÇÒ´çµÇÁö ¾ÊÀ½");
+            Debug.LogError("playerAnimatorê°€ í• ë‹¹ë˜ì§€ ì•ŠìŒ");
             return;
         }
 
         /*
         int dir = playerAnimator.GetInteger("Looking");
 
-        dir -= 1;   // ÇÃ·¹ÀÌ¾î°¡ º¸´Â ¹æÇâ Á¤¼ö 1~4¸¦ 0~3À¸·Î º¯È¯
+        dir -= 1;   // í”Œë ˆì´ì–´ê°€ ë³´ëŠ” ë°©í–¥ ì •ìˆ˜ 1~4ë¥¼ 0~3ìœ¼ë¡œ ë³€í™˜
         */
 
 
-        // ºí·»´õ Æ®¸®·Î ¹Ù²Ù¸ç ¹Ş¾Æ¿Â Looking °ª
+        // ë¸”ë Œë” íŠ¸ë¦¬ë¡œ ë°”ê¾¸ë©° ë°›ì•„ì˜¨ Looking ê°’
         float looking = playerAnimator.GetFloat("Looking");
 
-        // float °ªÀ» ¹æÇâ ÀÎµ¦½º·Î º¯È¯
+        // float ê°’ì„ ë°©í–¥ ì¸ë±ìŠ¤ë¡œ ë³€í™˜
         int dir = 0;
         if (Mathf.Approximately(looking, 0.00f))
-            dir = 0; // ¾Æ·¡
+            dir = 0; // ì•„ë˜
         else if (Mathf.Approximately(looking, 1.00f))
-            dir = 1; // À§
+            dir = 1; // ìœ„
         else if (Mathf.Approximately(looking, 0.33f))
-            dir = 2; // ¿ŞÂÊ
+            dir = 2; // ì™¼ìª½
         else if (Mathf.Approximately(looking, 0.66f))
-            dir = 3; // ¿À¸¥ÂÊ
+            dir = 3; // ì˜¤ë¥¸ìª½
         else
-            dir = 0; // ±âº»°ª(¾Æ·¡)
+            dir = 0; // ê¸°ë³¸ê°’(ì•„ë˜)
 
 
         Vector3[] positions = {
-        new Vector3(0, -0.5f, 0),       // ¾Æ·¡
-        new Vector3(0, 0.4f, 0),        // À§
-        new Vector3(-0.2f, -0.3f, 0),   // ¿ŞÂÊ
-        new Vector3(0.3f, -0.2f, 0)     // ¿À¸¥ÂÊ
+        new Vector3(0, -0.5f, 0),       // ì•„ë˜
+        new Vector3(0, 0.4f, 0),        // ìœ„
+        new Vector3(-0.2f, -0.3f, 0),   // ì™¼ìª½
+        new Vector3(0.3f, -0.2f, 0)     // ì˜¤ë¥¸ìª½
     };
 
-        float[] startZ = { -100f, 100f, -180f, -20f }; // ¾Æ·¡, À§, ¿ŞÂÊ, ¿À¸¥ÂÊ
+        float[] startZ = { -100f, 100f, -180f, -20f }; // ì•„ë˜, ìœ„, ì™¼ìª½, ì˜¤ë¥¸ìª½
 
         batonTransform.gameObject.SetActive(true);
         batonTransform.localPosition = positions[dir];
         batonTransform.localEulerAngles = Vector3.zero;
 
 
-        // ¿À¸¥ÂÊ ¹æÇâ¸¸ ¿¹¿ÜÃ³¸® Çß´ø °Í
-        //Quaternion startRotation;
-        //Quaternion endRotation;
-
-        /*
-        if (dir == 3) // ¿À¸¥ÂÊ
-        {
-            startRotation = Quaternion.Euler(0, 0, -20f);
-            endRotation = Quaternion.Euler(0, 0, 100f);
-        }
-        else
-        {
-            startRotation = Quaternion.Euler(0, 0, startZ[dir]);
-            endRotation = Quaternion.Euler(0, 0, startZ[dir] + 80f);
-        }
-        */
         Quaternion startRotation = Quaternion.Euler(0, 0, startZ[dir]);
         Quaternion endRotation = Quaternion.Euler(0, 0, startZ[dir] + 100f);
         
@@ -100,6 +84,6 @@ public class Baton : MonoBehaviour, IWeapon
 
     public void PlayAnimaion()
     {
-        Debug.Log("Áø¾ĞºÀ ¾Ö´Ï¸ŞÀÌ¼Ç Àç»ı");
+        Debug.Log("ì§„ì••ë´‰ ì• ë‹ˆë©”ì´ì…˜ ì¬ìƒ");
     }
 }
