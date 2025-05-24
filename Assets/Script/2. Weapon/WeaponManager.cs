@@ -14,10 +14,6 @@ public class WeaponManager : MonoBehaviour
 
     void Start()
     {
-        // WeaponManager의 인스펙터에 무기 할당하는 것으로 수정
-        //weaponObjects = GameObject.FindGameObjectsWithTag("Weapon");
-        //weaponObjects[weapon_index].SetActive(true);
-
         currentWeapon = weaponObjects[weapon_index].GetComponent<IWeapon>();
 
         if (currentWeapon == null)
