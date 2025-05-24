@@ -11,28 +11,17 @@ public class WeaponManager : MonoBehaviour
     private IWeapon currentWeapon;
     private int weapon_index = 0;
 
-    /*
-    public WeaponManager()
-    {
-        weapons = new IWeapon[]
-        {
-            new Baton(),
-            new Gun(),
 
-        };
-        currentWeapon = weapons[0];
-    }
-    */
     void Start()
     {
-        // WeaponManagerÀÇ ÀÎ½ºÆåÅÍ¿¡ ¹«±â ÇÒ´çÇÏ´Â °ÍÀ¸·Î ¼öÁ¤
+        // WeaponManagerì˜ ì¸ìŠ¤í™í„°ì— ë¬´ê¸° í• ë‹¹í•˜ëŠ” ê²ƒìœ¼ë¡œ ìˆ˜ì •
         //weaponObjects = GameObject.FindGameObjectsWithTag("Weapon");
         //weaponObjects[weapon_index].SetActive(true);
 
         currentWeapon = weaponObjects[weapon_index].GetComponent<IWeapon>();
 
         if (currentWeapon == null)
-            Debug.LogError($"{weaponObjects[weapon_index].name} ¿ÀºêÁ§Æ®¿¡ IWeapon ÄÄÆ÷³ÍÆ®°¡ ¾øÀ½");
+            Debug.LogError($"{weaponObjects[weapon_index].name} ì˜¤ë¸Œì íŠ¸ì— IWeapon ì»´í¬ë„ŒíŠ¸ê°€ ì—†ìŒ");
 
         weaponObjects[weapon_index].SetActive(false);
 
@@ -45,24 +34,12 @@ public class WeaponManager : MonoBehaviour
         if (currentWeapon != null)
             currentWeapon.Attack();
         else
-            Debug.LogError("currentWeapon¿¡ ¾ÆÁ÷ ÇÒ´çµÇÁö ¾ÊÀ½");
+            Debug.LogError("currentWeaponì— ì•„ì§ í• ë‹¹ë˜ì§€ ì•ŠìŒ");
     }
 
     public void ChangeWeapon()
     {
-        Debug.Log("¹«±â º¯°æ");
-
-        /*
-        if (weapon_index % 2 == 1)
-        {
-            weapon_index = 0;
-        }
-        else
-        {
-            weapon_index = 1;
-        }
-        currentWeapon = weapons[weapon_index];
-        */
+        Debug.Log("ë¬´ê¸° ë³€ê²½");
 
         weapon_index = (weapon_index + 1) % weaponObjects.Length;
         currentWeapon = weaponObjects[weapon_index].GetComponent<IWeapon>();
