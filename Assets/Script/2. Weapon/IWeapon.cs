@@ -4,8 +4,6 @@ using UnityEngine;
 
 public interface IWeapon
 {
-    //KeyCode Key { get; }
-    float Damage { get; }
+    int Damage { get; }
     void Attack();
-    void PlayAnimaion();
 }

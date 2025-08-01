@@ -4,68 +4,97 @@ using UnityEngine;
 
 public class Baton : MonoBehaviour, IWeapon
 {
-    //public KeyCode Key => KeyCode.A;
-    public float Damage => 5f;
+    public int Damage => 0; 
     public Animator playerAnimator;
     public Transform batonTransform;
+    public Collider2D Collider2D;
 
     public AudioSource audioSource;
     public AudioClip swingClip;
+    public BossHealth bossHealth;
+    public EnemyController enemy;
+    public GameObject sheildObject;
+    public GameObject playerDialogue;
+    public GameObject boss;
+
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if ((other.CompareTag("Boss")) && (!sheildObject.activeSelf))
+        {
+
+            bool isCritical = Random.value < 0.3f; 
+            int Damage = isCritical ? 25 : Random.Range(15, 24); // Ä¡¸íÅ¸¸é 30 µ¥¹ÌÁö, ¾Æ´Ï¸é ÀÏ¹İ
+
+            Debug.Log("º¸½º°¡ ¸Â´ÂÁß");
+            bossHealth.BossTakeDamage(Damage);
+
+            DamageTextManager.Instance.ShowDamage(
+                boss.transform.position, Damage, isCritical
+
+            );
+        }
+
+        if (other.CompareTag("Enemy"))
+        {
+            EnemyController target = other.GetComponent<EnemyController>();
+            if (target.canBeDamaged == true)
+            {
+                target.TakeDamage(1);
+            }
+            else
+            {
+                playerDialogue.SetActive(true);
+            }
+        }
+
+    }
+
 
     public void Attack()
     {
-        Debug.Log("íœ˜ë‘ë¥´ê¸°");
-
 
         if (playerAnimator == null)
         {
-            Debug.LogError("playerAnimatorê°€ í• ë‹¹ë˜ì§€ ì•ŠìŒ");
+            Debug.LogError("playerAnimator°¡ ÇÒ´çµÇÁö ¾ÊÀ½");
             return;
         }
 
-        /*
-        int dir = playerAnimator.GetInteger("Looking");
 
-        dir -= 1;   // í”Œë ˆì´ì–´ê°€ ë³´ëŠ” ë°©í–¥ ì •ìˆ˜ 1~4ë¥¼ 0~3ìœ¼ë¡œ ë³€í™˜
-        */
-
-
-        // ë¸”ë Œë” íŠ¸ë¦¬ë¡œ ë°”ê¾¸ë©° ë°›ì•„ì˜¨ Looking ê°’
         float looking = playerAnimator.GetFloat("Looking");
 
-        // float ê°’ì„ ë°©í–¥ ì¸ë±ìŠ¤ë¡œ ë³€í™˜
         int dir = 0;
         if (Mathf.Approximately(looking, 0.00f))
-            dir = 0; // ì•„ë˜
+            dir = 0; // ¾Æ·¡
         else if (Mathf.Approximately(looking, 1.00f))
-            dir = 1; // ìœ„
+            dir = 1; // À§
         else if (Mathf.Approximately(looking, 0.33f))
-            dir = 2; // ì™¼ìª½
+            dir = 2; // ¿ŞÂÊ
         else if (Mathf.Approximately(looking, 0.66f))
-            dir = 3; // ì˜¤ë¥¸ìª½
+            dir = 3; // ¿À¸¥ÂÊ
         else
-            dir = 0; // ê¸°ë³¸ê°’(ì•„ë˜)
+            dir = 0; // ±âº»°ª(¾Æ·¡)
 
 
         Vector3[] positions = {
-        new Vector3(0, -0.5f, 0),       // ì•„ë˜
-        new Vector3(0, 0.4f, 0),        // ìœ„
-        new Vector3(-0.2f, -0.3f, 0),   // ì™¼ìª½
-        new Vector3(0.3f, -0.2f, 0)     // ì˜¤ë¥¸ìª½
+        new Vector3(0, -0.5f, 0),       // ¾Æ·¡
+        new Vector3(0, 0.4f, 0),        // À§
+        new Vector3(-0.2f, -0.3f, 0),   // ¿ŞÂÊ
+        new Vector3(0.3f, -0.2f, 0)     // ¿À¸¥ÂÊ
     };
 
-        float[] startZ = { -100f, 100f, -180f, -20f }; // ì•„ë˜, ìœ„, ì™¼ìª½, ì˜¤ë¥¸ìª½
+        float[] startZ = { -100f, 100f, -180f, -20f }; // ¾Æ·¡, À§, ¿ŞÂÊ, ¿À¸¥ÂÊ
 
         batonTransform.gameObject.SetActive(true);
         batonTransform.localPosition = positions[dir];
         batonTransform.localEulerAngles = Vector3.zero;
-
 
         Quaternion startRotation = Quaternion.Euler(0, 0, startZ[dir]);
         Quaternion endRotation = Quaternion.Euler(0, 0, startZ[dir] + 100f);
         
         playerAnimator.gameObject.GetComponent<MonoBehaviour>().StartCoroutine(RotateBaton(batonTransform, startRotation, endRotation, 0.1f));
     }
+
     private IEnumerator RotateBaton(Transform target, Quaternion from, Quaternion to, float duration)
     {
         float elapsed = 0f;
@@ -80,10 +109,5 @@ public class Baton : MonoBehaviour, IWeapon
 
         target.localRotation = to;
         target.gameObject.SetActive(false);
-    }
-
-    public void PlayAnimaion()
-    {
-        Debug.Log("ì§„ì••ë´‰ ì• ë‹ˆë©”ì´ì…˜ ì¬ìƒ");
     }
 }
