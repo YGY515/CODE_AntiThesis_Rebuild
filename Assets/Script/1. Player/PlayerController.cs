@@ -5,23 +5,28 @@ using UnityEngine.UIElements;
 
 public class PlayerController : MonoBehaviour
 {
-    public float moveSpeed = 6f;
+    public float moveSpeed = 5f;
     public Animator anim;
     public Rigidbody2D rb;
 
     public WeaponManager weaponManager;
-    [SerializeField] private PlayerHealth playerHealth;
+    [SerializeField] private BossHealth BossStatus;
     
-
     [SerializeField] private GameObject Baton_Icon;
     [SerializeField] private GameObject Baton_Empty;
+
+    [SerializeField] private GameObject Gun_Icon;
+    [SerializeField] private GameObject Gun_Empty;
 
     [SerializeField] private GameObject Dash_Icon;
     [SerializeField] private GameObject Dash_Empty;
 
+    public AudioSource weapon_ChangeSource;
+    public AudioClip Clip;
+
     private bool canAttack = true;
     private bool canDash = true;
-    private float Cooldown = 0.3f;
+    private float Cooldown = 0.5f;
 
     private float dashDuration = 0.5f;
     private float dashSpeed = 3f;
@@ -30,7 +35,6 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        //weaponManager = new WeaponManager();
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
     }
@@ -39,23 +43,13 @@ public class PlayerController : MonoBehaviour
         HandleMovementInput();
         WeaponInput();
         DashInput();
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            playerHealth.TakeDamage(1);
-        }
-        if (Input.GetKeyDown(KeyCode.G))
-        {
-            playerHealth.Heal(1);
-        }
     }
 
     void HandleMovementInput()
     {
-        // Manage the Player Movement
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
 
-        // 블렌드 트리로 만든 애니메이션
         anim.SetFloat("PositionX", horizontal);
         anim.SetFloat("PositionY", vertical);
 
@@ -71,12 +65,12 @@ public class PlayerController : MonoBehaviour
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
                     anim.SetBool("Flying", true);
-                    moveSpeed = 8.5f;
+                    moveSpeed = 7f;
                 }
                 else
                 {
                     anim.SetBool("Flying", false);
-                    moveSpeed = 6f;
+                    moveSpeed = 5f;
                 }
             }
  
@@ -104,7 +98,7 @@ public class PlayerController : MonoBehaviour
             }
 
         }
-        else // 키 입력이 없는 경우
+        else
         {
             anim.SetBool("Flying", false);
             anim.SetBool("Running", false);
@@ -122,20 +116,54 @@ public class PlayerController : MonoBehaviour
         }
 
         if (Input.GetKeyDown(KeyCode.Tab))
+        {
             weaponManager.ChangeWeapon();
+            { 
+                weapon_ChangeSource.PlayOneShot(Clip); 
+                if (weaponManager.weapon_index == 0)
+                {
+                    Baton_Icon.SetActive(true);
+                    Gun_Icon.SetActive(false);
+                }
+                else if (weaponManager.weapon_index == 1)
+                {
+                    Baton_Icon.SetActive(false);
+                    Gun_Icon.SetActive(true);
+                }
+            }
+        }
+            
     }
 
     private IEnumerator WeaponCooldown()
     {
-        canAttack = false;
-        if (Baton_Icon != null) Baton_Icon.SetActive(false);
-        if (Baton_Empty != null) Baton_Empty.SetActive(true);
+        if (weaponManager.weapon_index == 0)
+        {   
+            // 근접 무기일 때
+            canAttack = false;
+            if (Baton_Icon != null) Baton_Icon.SetActive(false);
+            if (Baton_Empty != null) Baton_Empty.SetActive(true);
 
-        yield return new WaitForSeconds(Cooldown);
+            yield return new WaitForSeconds(Cooldown);
 
-        if (Baton_Icon != null) Baton_Icon.SetActive(true);
-        if (Baton_Empty != null) Baton_Empty.SetActive(false);
-        canAttack = true;
+            if (Baton_Icon != null) Baton_Icon.SetActive(true);
+            if (Baton_Empty != null) Baton_Empty.SetActive(false);
+            canAttack = true;
+        }
+
+        else if (weaponManager.weapon_index == 1)
+        {   
+            // 원거리 무기일 때
+            canAttack = false;
+            if (Gun_Icon != null) Gun_Icon.SetActive(false);
+            if (Gun_Empty != null) Gun_Empty.SetActive(true);
+
+            yield return new WaitForSeconds(Cooldown);
+
+            if (Gun_Icon != null) Gun_Icon.SetActive(true);
+            if (Gun_Empty != null) Gun_Empty.SetActive(false);
+            canAttack = true;
+        }
     }
 
     void DashInput()

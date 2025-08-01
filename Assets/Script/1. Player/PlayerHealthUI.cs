@@ -7,7 +7,6 @@ public class PlayerHealthUI : MonoBehaviour
 {
     [SerializeField] private PlayerHealth status;
 
-    // 하트 이미지 0~3개 상태별로 미리 만들어둔 오브젝트를 Inspector에서 할당
     public GameObject heart0;
     public GameObject heart1;
     public GameObject heart2;
@@ -29,7 +28,6 @@ public class PlayerHealthUI : MonoBehaviour
 
     public void UpdateHealth(int currentHealth)
     {
-        // 모든 하트 이미지 비활성화
         heart0.SetActive(false);
         heart1.SetActive(false);
         heart2.SetActive(false);

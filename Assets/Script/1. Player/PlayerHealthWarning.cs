@@ -13,7 +13,7 @@ public class PlayerHealthWarning : MonoBehaviour
     void OnEnable()
     {
         playerHealth.HealthWarning += ShowWarning;
-        playerHealth.HealthChange += OnHealthChanged; // 체력 변화 감지
+        playerHealth.HealthChange += OnHealthChanged;
     }
 
     void OnDisable()
@@ -31,14 +31,13 @@ public class PlayerHealthWarning : MonoBehaviour
             StopCoroutine(blinkCoroutine);
 
         blinkCoroutine = StartCoroutine(BlinkWarning());
-        Debug.Log("체력 없음");
     }
 
     void OnHealthChanged(int currentHealth)
     {
         if (currentHealth > playerHealth.MaxHealth / 3)
         {
-            // 체력이 회복되면 경고창 비활성화 및 코루틴 중지
+            // 체력이 회복되면 경고창 비활성화
             if (blinkCoroutine != null)
             {
                 StopCoroutine(blinkCoroutine);
