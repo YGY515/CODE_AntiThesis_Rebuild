@@ -1,19 +1,23 @@
 using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UI;
+
+public enum BossState
+{
+    RandomMove,
+    Chase,
+    Attack,
+    Rest,
+    Dead
+}
 
 public class BossController : MonoBehaviour
 {
-
     public Animator anim;
     public GameObject shieldObject;
     public Transform player;
     public Rigidbody2D rb;
     public PlayerHealth playerHealth;
     public BossHealth bossHealth;
-
 
     private Vector2 currentDirection;
     private Vector2 randomDirection;
@@ -36,94 +40,118 @@ public class BossController : MonoBehaviour
     public float attackDistanceY = 0.05f;
     public float dashDistance = 0.5f;
     public int damageAmount = 1;
-    private bool canAttack = true;
+
+    private Coroutine stateCoroutine;
+
+    private BossState currentState;
 
     void Start()
     {
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
         PickRandomDirection();
+        ChangeState(BossState.RandomMove);
     }
 
     void Update()
     {
-        
-        if (bossHealth.CurrentHealth <= 0)
+        if (currentState == BossState.Dead)
+            return;
+
+        if (bossHealth.CurrentHealth <= 0 && currentState != BossState.Dead)
         {
-            OnBossDied();
+            ChangeState(BossState.Dead);
+            return;
         }
 
-        if (shieldObject.activeSelf)
+        switch (currentState)
         {
-            RandomMoveWithPause();
-        }
-        else
-        {
-            AttackPlayer();
-            HandleChaseWithDash();
+            case BossState.RandomMove:
+                RandomMoveWithPause();
+
+                if (!shieldObject.activeSelf)    // 방어막이 꺼지면 추격
+                    ChangeState(BossState.Chase);
+                break;
+
+            case BossState.Chase:
+                HandleChaseWithDash();
+
+                if (shieldObject.activeSelf)    // 방어막이 켜지면 무작위 이동
+                    ChangeState(BossState.RandomMove);
+
+                else if (IsPlayerInAttackRange())
+                    ChangeState(BossState.Attack);
+                break;
+
+                // Attack, Rest, Dead는 코루틴에서 처리함
+                // Attack: AttackStateCoroutine, DashRoutine
+                // Rest: RestStateCoroutine
+                // Dead: OnBossDied
         }
     }
 
     void FixedUpdate()
     {
-        if (!shieldObject.activeSelf)
+        if (currentState == BossState.Chase)
         {
-            if (canAttack)
-                rb.MovePosition(rb.position + currentDirection * moveSpeed * Time.fixedDeltaTime);
-            
+            rb.MovePosition(rb.position + currentDirection * moveSpeed * Time.fixedDeltaTime);
         }
     }
 
-    void AttackPlayer()
+    void ChangeState(BossState newState)
     {
-        if (!canAttack || player == null) return;
-
-        Vector2 diff = player.position - transform.position;
-
-        if (Mathf.Abs(diff.x) <= attackDistanceX && Mathf.Abs(diff.y) <= attackDistanceY)
+        if (stateCoroutine != null)
         {
-            StartCoroutine(AttackCoroutine(diff));
+            StopCoroutine(stateCoroutine);
+            stateCoroutine = null;
+        }
+
+        currentState = newState;
+
+        switch (newState)
+        {
+            case BossState.Attack:
+                stateCoroutine = StartCoroutine(AttackStateCoroutine());
+                break;
+            case BossState.Rest:
+                stateCoroutine = StartCoroutine(RestStateCoroutine());
+                break;
+            case BossState.Dead:
+                OnBossDied();
+                break;
         }
     }
 
-    IEnumerator AttackCoroutine(Vector2 diff)
+    // 상태별 동작
+
+    void RandomMoveWithPause()
     {
-        canAttack = false;
-
-        Vector2 dashDir = diff.normalized;
-
-        yield return StartCoroutine(DashRoutine(dashDir)); 
-        yield return new WaitForSeconds(attackCooldown); 
-        canAttack = true;
-    }
-
-    IEnumerator DashRoutine(Vector2 dashDir)
-    {
-        float dashTime = 0.2f;
-        float elapsed = 0f;
-        Vector2 startPos = rb.position;
-        Vector2 endPos = startPos + dashDir * dashDistance;
-
-        bool didDamage = false;
-
-        while (elapsed < dashTime)
+        moveTimer += Time.deltaTime;
+        if (isMoving)
         {
-            elapsed += Time.deltaTime;
-            Vector2 newPos = Vector2.Lerp(startPos, endPos, elapsed / dashTime);
-            rb.MovePosition(newPos);
-
-            if (!didDamage && Vector2.Distance(newPos, player.position) <= 0.5f)
+            MoveAndAnimate(randomDirection);
+            if (moveTimer >= randomMoveInterval)
             {
-                playerHealth.PlayerTakeDamage(damageAmount);
-                didDamage = true;            
+                moveTimer = 0f;
+                isMoving = false;
             }
-
-            yield return null;
         }
-
-        rb.MovePosition(endPos);
+        else
+        {
+            if (moveTimer >= restInterval)
+            {
+                moveTimer = 0f;
+                isMoving = true;
+                PickRandomDirection();
+            }
+        }
     }
 
+    void PickRandomDirection()
+    {
+        Vector2[] directions = { Vector2.up, Vector2.down, Vector2.left, Vector2.right };
+        randomDirection = directions[Random.Range(0, directions.Length)];
+    }
 
     void HandleChaseWithDash()
     {
@@ -153,35 +181,6 @@ public class BossController : MonoBehaviour
 
         ChasePlayer();
     }
-    void RandomMoveWithPause()
-    {
-        moveTimer += Time.deltaTime;
-        if (isMoving)
-        {
-            MoveAndAnimate(randomDirection);
-            if (moveTimer >= randomMoveInterval)
-            {
-                moveTimer = 0f;
-                isMoving = false;
-            }
-        }
-        else
-        {
-            // 쉬는 중(멈춤)
-            if (moveTimer >= restInterval)
-            {
-                moveTimer = 0f;
-                isMoving = true;
-                PickRandomDirection();
-            }
-        }
-    }
-
-    void PickRandomDirection()
-    {
-        Vector2[] directions = { Vector2.up, Vector2.down, Vector2.left, Vector2.right };
-        randomDirection = directions[Random.Range(0, directions.Length)];
-    }
 
     void ChasePlayer()
     {
@@ -191,10 +190,9 @@ public class BossController : MonoBehaviour
 
         if (distance < 0.1f)
         {
-            // 플레이어와 너무 가까우면 멈추기
             anim.SetFloat("Looking", anim.GetFloat("Looking"));
-            currentDirection = Vector2.zero; 
-            rb.velocity = Vector2.zero;      
+            currentDirection = Vector2.zero;
+            rb.velocity = Vector2.zero;
             return;
         }
 
@@ -202,7 +200,7 @@ public class BossController : MonoBehaviour
         currentDirection = direction;
 
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        float looking = 0.00f;  // 시작 시 아래 방향
+        float looking = 0.00f;
 
         if (angle >= -45f && angle < 45f)
             looking = 0.66f;
@@ -215,8 +213,6 @@ public class BossController : MonoBehaviour
 
         anim.SetFloat("Looking", looking);
     }
-
-
 
     void MoveAndAnimate(Vector2 dir)
     {
@@ -232,6 +228,57 @@ public class BossController : MonoBehaviour
         transform.position += (Vector3)(dir.normalized * moveSpeed * Time.deltaTime);
     }
 
+    bool IsPlayerInAttackRange()
+    {
+        if (player == null) return false;
+        Vector2 diff = player.position - transform.position;
+        return Mathf.Abs(diff.x) <= attackDistanceX && Mathf.Abs(diff.y) <= attackDistanceY;
+    }
+
+    IEnumerator AttackStateCoroutine()
+    {
+        // 공격(대쉬) 후 Rest 상태로 전이
+        Vector2 diff = player.position - transform.position;
+        Vector2 dashDir = diff.normalized;
+
+        yield return StartCoroutine(DashRoutine(dashDir));
+        ChangeState(BossState.Rest);
+    }
+
+    IEnumerator RestStateCoroutine()
+    {
+        // 공격 쿨타임 후 다시 Chase로 전이
+        yield return new WaitForSeconds(attackCooldown);
+        ChangeState(BossState.Chase);
+    }
+
+    IEnumerator DashRoutine(Vector2 dashDir)
+    {
+        float dashTime = 0.2f;
+        float elapsed = 0f;
+        Vector2 startPos = rb.position;
+        Vector2 endPos = startPos + dashDir * dashDistance;
+
+        bool didDamage = false;
+
+        while (elapsed < dashTime)
+        {
+            elapsed += Time.deltaTime;
+            Vector2 newPos = Vector2.Lerp(startPos, endPos, elapsed / dashTime);
+            rb.MovePosition(newPos);
+
+            if (!didDamage && Vector2.Distance(newPos, player.position) <= 0.5f)
+            {
+                playerHealth.PlayerTakeDamage(damageAmount);
+                didDamage = true;
+            }
+
+            yield return null;
+        }
+
+        rb.MovePosition(endPos);
+    }
+
     void OnBossDied()
     {
         StartCoroutine(DieWithArcEffect());
@@ -243,15 +290,14 @@ public class BossController : MonoBehaviour
         rb.gravityScale = 0f;
         anim.enabled = false;
 
-        float duration = 1.0f; 
+        float duration = 1.0f;
         float elapsed = 0f;
         Vector3 startPos = transform.position;
-        Vector3 endPos = startPos + new Vector3(4f, 0f, 0f); 
+        Vector3 endPos = startPos + new Vector3(4f, 0f, 0f);
         float height = 2.5f;
 
         float startAngle = transform.eulerAngles.z;
         float endAngle = startAngle - 90f;
-
 
         SpriteRenderer sr = bossHealth.Boss_spriteRenderer;
         Color startColor = sr.color;
@@ -289,6 +335,4 @@ public class BossController : MonoBehaviour
 
         Destroy(gameObject);
     }
-
 }
-
